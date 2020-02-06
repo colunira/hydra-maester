@@ -1,0 +1,51 @@
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: simple-job-account
+  namespace:  kyma-system
+---
+kind: ClusterRole
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: simple-job-role
+  namespace:  default
+rules:
+  - apiGroups: ["*"]
+    resources: ["*"]
+    verbs: ["*"]
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1beta1
+metadata:
+  name: simple-job-role-binding
+  namespace:  kyma-system
+subjects:
+  - kind: ServiceAccount
+    name: simple-job-account
+    namespace:  kyma-system
+roleRef:
+  apiGroup: rbac.authorization.k8s.io
+  kind: ClusterRole
+  name: simple-job-role
+---
+apiVersion: batch/v1
+kind: Job
+metadata:
+  name: simple-job
+  namespace: kyma-system
+spec:
+  ttlSecondsAfterFinished: 30
+  template:
+    metadata:
+      name: simple-job
+      namespace: kyma-system
+      annotations:
+        sidecar.istio.io/inject: “false”
+    spec:
+      serviceAccountName: simple-job-account
+      restartPolicy: OnFailure
+      containers:
+        - name: hello
+          image: colunira/hydra-maester:sync
+          imagePullPolicy: Always
